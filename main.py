@@ -4,35 +4,35 @@ from flask import Flask, request
 import telebot
 import requests
 
+# Загрузка токена из .env
 load_dotenv()
-
 API_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(API_TOKEN)
 
-app = Flask(__name__)  # ✅ ВАЖНО
+# Flask приложение
+app = Flask(__name__)
 
-# Проверка сервера (Render Ping)
-@app.route('/', methods=['GET'])
+# Проверка сервера
+@app.route("/", methods=["GET"])
 def index():
     return "Bot is running!"
 
-# Вебхук для Telegram
-@app.route(f"/{API_TOKEN}", methods=['POST'])  # ✅ обрабатывает POST-запрос
+# Вебхук от Telegram
+@app.route(f"/{API_TOKEN}", methods=["POST"])
 def getMessage():
-    json_str = request.get_data().decode('UTF-8')
+    json_str = request.get_data().decode("UTF-8")
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
-    return 'ok', 200
+    return "ok", 200
 
-# Обработка ссылок
+# Обработка входящих сообщений
 @bot.message_handler(func=lambda message: True)
 def download_video(message):
     url = message.text.strip()
     if any(domain in url for domain in ["tiktok.com", "instagram.com", "youtube.com", "youtu.be"]):
         bot.send_message(message.chat.id, "⏳ Обрабатываю ссылку...")
-
-        api_url = f"https://api.dl-x.com/dl?url={url}"
         try:
+            api_url = f"https://api.dl-x.com/dl?url={url}"
             response = requests.get(api_url).json()
             if "url" in response:
                 bot.send_video(message.chat.id, response["url"])
@@ -44,6 +44,6 @@ def download_video(message):
         bot.send_message(message.chat.id, "❌ Отправь ссылку на TikTok / Instagram / Shorts")
 
 # Запуск сервера
-ifge.chat.id== '__main__':  # ✅ тоже было неправильно
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
