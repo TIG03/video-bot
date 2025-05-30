@@ -19,7 +19,7 @@ def webhook():
     return "ok", 200
 
 # Установка webhook и запуск Flask-сервера
-if name == "__main__":
+if __name__ == "__main__":
     bot.remove_webhook()
     bot.set_webhook(url=f"https://video-bot-jzdg.onrender.com/{TOKEN}")  # Это твой адрес на Render
     port = int(os.environ.get('PORT', 5000))  # Render передаёт PORT, на котором нужно слушать
