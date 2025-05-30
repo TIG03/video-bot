@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: video-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        value: 7713277915:AAEFzFI7qvMFGg5ys35Y6K8ApQhJMFblE-Y
