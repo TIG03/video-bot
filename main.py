@@ -9,7 +9,7 @@ load_dotenv()
 API_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(API_TOKEN)
 
-app = Flask(__name__)
+app = Flask(__name__)  # ✅ ВАЖНО
 
 # Проверка сервера (Render Ping)
 @app.route('/', methods=['GET'])
@@ -17,7 +17,7 @@ def index():
     return "Bot is running!"
 
 # Вебхук для Telegram
-@app.route(f"/{API_TOKEN}", methods=['POST'])
+@app.route(f"/{API_TOKEN}", methods=['POST'])  # ✅ обрабатывает POST-запрос
 def getMessage():
     json_str = request.get_data().decode('UTF-8')
     update = telebot.types.Update.de_json(json_str)
@@ -44,6 +44,6 @@ def download_video(message):
         bot.send_message(message.chat.id, "❌ Отправь ссылку на TikTok / Instagram / Shorts")
 
 # Запуск сервера
-if __name__ == '__main__':
+ifge.chat.id== '__main__':  # ✅ тоже было неправильно
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
