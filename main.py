@@ -1,38 +1,49 @@
-from flask import Flask, request
-from pyrogram import Client
-import requests
 import os
+from dotenv import load_dotenv
+from flask import Flask, request
+import telebot
+import requests
+
+load_dotenv()
+
+API_TOKEN = os.getenv("BOT_TOKEN")
+bot = telebot.TeleBot(API_TOKEN)
 
 app = Flask(__name__)
 
-TOKEN = "7713277915:AAEFzFI7qvMFGg5ys35Y6K8ApQhJMFblE-Y"
-API_ID = 12345678  # заменим позже
-API_HASH = "abcdef1234567890abcdef1234567890"  # заменим позже
-
-bot = Client("bot", bot_token=TOKEN, api_id=API_ID, api_hash=API_HASH)
-
-@app.route("/")
-def home():
+# Проверка сервера (Render Ping)
+@app.route('/', methods=['GET'])
+def index():
     return "Bot is running!"
 
-@app.route(f"/{TOKEN}", methods=["POST"])
-def receive_update():
-    update = request.get_json()
-    print("UPDATE:", update)
-    
-    # Простейшая логика: если прислали сообщение — ответить "Привет"
-    if "message" in update:
-        chat_id = update["message"]["chat"]["id"]
-        text = update["message"].get("text", "")
-        
-        if text.startswith("http"):
-            # Здесь можно скачать видео и отправить — пока просто ответим
-            requests.get(
-                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                params={"chat_id": chat_id, "text": "Видео получено, сейчас скачаю!"},
-            )
-    
-    return {"ok": True}
+# Вебхук для Telegram
+@app.route(f"/{API_TOKEN}", methods=['POST'])
+def getMessage():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return 'ok', 200
 
-if name == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=10000)
+# Обработка ссылок
+@bot.message_handler(func=lambda message: True)
+def download_video(message):
+    url = message.text.strip()
+    if any(domain in url for domain in ["tiktok.com", "instagram.com", "youtube.com", "youtu.be"]):
+        bot.send_message(message.chat.id, "⏳ Обрабатываю ссылку...")
+
+        api_url = f"https://api.dl-x.com/dl?url={url}"
+        try:
+            response = requests.get(api_url).json()
+            if "url" in response:
+                bot.send_video(message.chat.id, response["url"])
+            else:
+                bot.send_message(message.chat.id, "❌ Видео не найдено. Попробуйте другую ссылку.")
+        except Exception as e:
+            bot.send_message(message.chat.id, f"⚠️ Ошибка: {e}")
+    else:
+        bot.send_message(message.chat.id, "❌ Отправь ссылку на TikTok / Instagram / Shorts")
+
+# Запуск сервера
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
