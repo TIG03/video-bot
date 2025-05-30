@@ -1,0 +1,14 @@
+app = "videochatbot"
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  BOT_TOKEN = "ТУТ_ВСТАВЬ_СВОЙ_ТОКЕН_БОТА"
+
+[experimental]
+  allowed_public_ports = []
+  auto_rollback = true
