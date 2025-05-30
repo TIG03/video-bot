@@ -1,26 +1,38 @@
-import os
-import telebot
 from flask import Flask, request
+from pyrogram import Client
+import requests
+import os
 
-TOKEN = os.getenv("BOT_TOKEN")  # Бот берёт токен из Render переменной окружения
-bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# Команда /start
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "Привет! Отправь ссылку на видео.")
+TOKEN = "7713277915:AAEFzFI7qvMFGg5ys35Y6K8ApQhJMFblE-Y"
+API_ID = 12345678  # заменим позже
+API_HASH = "abcdef1234567890abcdef1234567890"  # заменим позже
 
-# Обработка обновлений от Telegram через webhook
-@app.route(f"/{TOKEN}", methods=['POST'])
-def webhook():
-    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
-    bot.process_new_updates([update])
-    return "ok", 200
+bot = Client("bot", bot_token=TOKEN, api_id=API_ID, api_hash=API_HASH)
 
-# Установка webhook и запуск Flask-сервера
-if __name__ == "__main__":
-    bot.remove_webhook()
-    bot.set_webhook(url=f"https://video-bot-jzdg.onrender.com/{TOKEN}")  # Это твой адрес на Render
-    port = int(os.environ.get('PORT', 5000))  # Render передаёт PORT, на котором нужно слушать
-    app.run(host='0.0.0.0', port=port)
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+@app.route(f"/{TOKEN}", methods=["POST"])
+def receive_update():
+    update = request.get_json()
+    print("UPDATE:", update)
+    
+    # Простейшая логика: если прислали сообщение — ответить "Привет"
+    if "message" in update:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"].get("text", "")
+        
+        if text.startswith("http"):
+            # Здесь можно скачать видео и отправить — пока просто ответим
+            requests.get(
+                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                params={"chat_id": chat_id, "text": "Видео получено, сейчас скачаю!"},
+            )
+    
+    return {"ok": True}
+
+if name == "__main__":
+    app.run(debug=False, host="0.0.0.0", port=10000)
