@@ -1,39 +1,26 @@
 import os
 import telebot
-import requests
+from flask import Flask, request
 
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("BOT_TOKEN")  # Бот берёт токен из Render переменной окружения
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
+# Команда /start
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.send_message(message.chat.id,
-        "👋 Привет! Отправь ссылку на видео из YouTube Shorts, Instagram или TikTok — я скачаю и пришлю тебе видео.")
+    bot.reply_to(message, "Привет! Отправь ссылку на видео.")
 
-@bot.message_handler(func=lambda m: True)
-def handle_video_request(message):
-    url = message.text.strip()
-    if not url.startswith("http"):
-        bot.reply_to(message, "❌ Это не похоже на ссылку. Попробуй снова.")
-        return
+# Обработка обновлений от Telegram через webhook
+@app.route(f"/{TOKEN}", methods=['POST'])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+    bot.process_new_updates([update])
+    return "ok", 200
 
-    msg = bot.send_message(message.chat.id, "⏳ Загружаю видео...")
-
-    try:
-        response = requests.post("https://co.wuk.sh/api/json", json={
-            "url": url,
-            "hd": True,
-            "isAudioOnly": False
-        }, timeout=30)
-
-        result = response.json()
-        video_url = result.get("url")
-
-        if video_url:
-            bot.send_video(message.chat.id, video=video_url, caption="✅ Готово!")
-        else:
-            bot.send_message(message.chat.id, "❌ Не удалось получить видео с сервиса.")
-    except Exception as e:
-        bot.send_message(message.chat.id, f"Ошибка загрузки: {str(e)}")
-
-bot.polling()
+# Установка webhook и запуск Flask-сервера
+if name == "__main__":
+    bot.remove_webhook()
+    bot.set_webhook(url=f"https://video-bot-jzdg.onrender.com/{TOKEN}")  # Это твой адрес на Render
+    port = int(os.environ.get('PORT', 5000))  # Render передаёт PORT, на котором нужно слушать
+    app.run(host='0.0.0.0', port=port)
